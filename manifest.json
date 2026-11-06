@@ -4,6 +4,7 @@
   "name": "omaview",
   "version": "0.1.0",
   "author": "qnlbnsl",
+  "license": "MIT",
   "description": "CPU, GPU and system stats in the bar, with hover reports you can rearrange.",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },

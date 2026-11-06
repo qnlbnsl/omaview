@@ -1,24 +1,36 @@
 # omaview
 
-PC stats for the [Omarchy](https://omarchy.org) bar. The bar shows live CPU, GPU and network
-numbers, and hovering a section opens a detailed report whose cards you can rearrange.
-
-**Made by AI — use at your own peril.** I've reviewed the code, but that doesn't make it
-bulletproof. Expect sharp edges.
+Live CPU, GPU and network stats in your [Omarchy](https://omarchy.org) bar. Hover a section for
+a detailed report, then rearrange its cards however you like.
 
 ```text
 CPU 41% 45° 120W    GPU 37% 29° 36W    ↑ 1.2 MB/s ↓ 8.4 MB/s
 ```
 
 <p>
-  <img src="docs/images/cpu.png" alt="CPU report" height="420">
-  <img src="docs/images/gpu.png" alt="GPU report" height="420">
-  <img src="docs/images/system.png" alt="System report" height="420">
+  <img src="docs/images/cpu-live.png" alt="CPU report open below the bar, with a load graph, per-core load and top processes" height="420">
+  <img src="docs/images/gpu-live.png" alt="GPU report with load, memory, temperature and clock rings, engine use and GPU processes" height="420">
+  <img src="docs/images/system-live.png" alt="System report with network, disks, memory, top processes, temperatures and fans" height="420">
 </p>
 
-<sub>Screenshots use the built-in fake data, which pegs values on purpose.</sub>
+<sub>A real machine, mostly idle. IP addresses are blurred.</sub>
 
-## Reports
+<details>
+<summary>The same reports under heavy load</summary>
+<br>
+<p>
+  <img src="docs/images/cpu.png" alt="CPU report with busy cores in green, yellow and red" height="420">
+  <img src="docs/images/gpu.png" alt="GPU report with load, memory and temperature rings near their limits" height="420">
+  <img src="docs/images/system.png" alt="System report with a nearly full disk and high memory use" height="420">
+</p>
+<sub>These use the built-in fake data, which pegs values on purpose.</sub>
+</details>
+
+> [!WARNING]
+> **Made by AI — use at your own peril.** I've reviewed the code, but that doesn't make it
+> bulletproof. Expect sharp edges.
+
+## What you get
 
 | Section | Bar shows | Report shows |
 |---|---|---|
@@ -35,17 +47,33 @@ CPU 41% 45° 120W    GPU 37% 29° 36W    ↑ 1.2 MB/s ↓ 8.4 MB/s
 
 ## Install
 
-From a checkout of this repo:
-
 ```bash
-plugin=~/.config/omarchy/plugins/io.github.qnlbnsl.omaview
-mkdir -p "$plugin"
-cp -r BarWidget.qml manifest.json collector lib ui "$plugin/"
-omarchy-shell shell rescanPlugins
-omarchy plugin enable io.github.qnlbnsl.omaview
+omarchy plugin add https://github.com/qnlbnsl/omaview.git --enable
 ```
 
-To remove it from the bar, run `omarchy plugin disable io.github.qnlbnsl.omaview`.
+To get a newer version later:
+
+```bash
+omarchy plugin update io.github.qnlbnsl.omaview
+```
+
+## Remove
+
+To take it off the bar but keep it installed:
+
+```bash
+omarchy plugin disable io.github.qnlbnsl.omaview
+```
+
+To delete it:
+
+```bash
+omarchy plugin remove io.github.qnlbnsl.omaview
+```
+
+omaview has no uninstall step of its own. Your report layouts and temperature unit stay in
+Omarchy's `shell.json`, and its socket and lock files in `$XDG_RUNTIME_DIR` are cleared by the
+system when you log out.
 
 ## Use
 
@@ -79,6 +107,19 @@ omarchy-shell omaview close
 omarchy bar set io.github.qnlbnsl.omaview temperatureUnit Fahrenheit
 ```
 
+## What it does on your system
+
+Plugins run unsandboxed, so here's exactly what omaview touches:
+
+- **Runs one background process.** The bar starts a small Python collector, shared across
+  monitors, that samples every 2 seconds. It collects per-process data only while a report is
+  open.
+- **Reads** `/proc` and `/sys`, plus NVIDIA's own library (NVML) when it's present.
+- **Writes** a socket and lock file in `$XDG_RUNTIME_DIR`, and your layouts to Omarchy's
+  `shell.json` when you save an edit.
+- **Doesn't** use the network, need root, or install services. It shows process names, never
+  command lines, because those can hold tokens.
+
 ## Limits
 
 - 3D and compute are one number, because that's how NVIDIA reports them.
@@ -89,6 +130,20 @@ omarchy bar set io.github.qnlbnsl.omaview temperatureUnit Fahrenheit
 - Tested on one PC so far: Hyprland 0.56, Ryzen 9 5950X and RTX 3090.
 
 ## Development
+
+To run a working copy, copy it into the plugin folder. `omarchy plugin add` refuses to install
+while this folder exists, so remove it first if you want to test the normal install.
+
+```bash
+plugin=~/.config/omarchy/plugins/io.github.qnlbnsl.omaview
+mkdir -p "$plugin"
+cp -r BarWidget.qml manifest.json collector lib ui "$plugin/"
+omarchy-shell shell rescanPlugins
+omarchy plugin enable io.github.qnlbnsl.omaview
+```
+
+After changing QML, copy the files again and run `omarchy restart shell`. The shell notices
+saved files, but didn't reliably pick up the new code in testing.
 
 Tests need `qt6-declarative` for the QML logic tests:
 
@@ -104,9 +159,6 @@ set it back to `false` when you're done:
 ```bash
 omarchy bar set io.github.qnlbnsl.omaview mock true --json
 ```
-
-After changing QML, copy the files to the plugin folder and run `omarchy restart shell`. The
-shell notices saved files, but didn't reliably pick up the new code in testing.
 
 [docs/design.md](docs/design.md) explains how the parts fit together.
 

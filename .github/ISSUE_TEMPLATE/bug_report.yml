@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in the bar or a report is wrong or missing.
+labels:
+  - bug
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw. A screenshot helps. Blur anything you'd rather keep private, such as IP addresses or process names.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: omaview version
+      description: "The `version` in `~/.config/omarchy/plugins/io.github.qnlbnsl.omaview/manifest.json`."
+    validations:
+      required: true
+
+  - type: input
+    id: omarchy
+    attributes:
+      label: Omarchy and Hyprland versions
+      description: "Output of `omarchy version` and `hyprctl version | head -1`."
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: CPU and GPU
+      description: Include the NVIDIA driver version if you have one. Only NVIDIA GPUs are read so far.
+      placeholder: Ryzen 9 5950X, RTX 3090, driver 580.x
+    validations:
+      required: true
+
+  - type: dropdown
+    id: section
+    attributes:
+      label: Where is the problem?
+      options:
+        - Bar text
+        - CPU report
+        - GPU report
+        - System report
+        - Rearranging cards
+        - Install, update or removal
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: 'Output of `qs log -p "$OMARCHY_PATH/shell" --tail 100 | grep -i omaview`. Check it for anything private before posting.'
+      render: text
