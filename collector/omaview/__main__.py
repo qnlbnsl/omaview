@@ -6,11 +6,13 @@ import signal
 import sys
 import time
 
-from . import mock, nvml, sampler, sensors, server, system
+from . import drm, mock, nvml, sampler, sensors, server, system
 
 
 def live_sampler():
-    gpu = nvml.Nvml.open(names=system.process_name)
+    nvidia = nvml.Nvml.open(names=system.process_name)
+    others = drm.Drm.open(names=system.process_name, describe=system.describe_pci, primary=nvidia is None)
+    gpu = drm.combine(nvidia, others)
     return sampler.Sampler(
         read=system.read_text, clock=time.monotonic, physical_ifaces=system.physical_interfaces,
         whole_disks=system.whole_disks, hwmon=sensors.read_hwmon, gpu=gpu, rapl=system.rapl_energy,
