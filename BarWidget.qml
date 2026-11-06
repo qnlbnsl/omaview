@@ -42,7 +42,10 @@ BarWidget {
 
   onActiveReportChanged: {
     syncDetail()
-    if (activeReport !== "") theme.reload()
+    if (activeReport !== "") {
+      lastReport = activeReport
+      theme.reload()
+    }
   }
 
   function updateHover() {
@@ -70,6 +73,13 @@ BarWidget {
     saveDraft()
     activeReport = ""
   }
+
+  // `omarchy-shell shell summon|hide|toggle` reach a bar widget only through these three.
+  // The bar requires all of them on the root, and picks the copy on the focused monitor.
+  readonly property bool opened: activeReport !== ""
+  property string lastReport: "cpu"
+  function open() { openReport(lastReport) }
+  function close() { closeReport(activeReport) }
 
   function beginEdit() { draft = JSON.parse(JSON.stringify(layouts[activeReport])) }
 

@@ -71,9 +71,9 @@ To delete it:
 omarchy plugin remove io.github.qnlbnsl.omaview
 ```
 
-omaview has no uninstall step of its own. Your report layouts and temperature unit stay in
-Omarchy's `shell.json`, and its socket and lock files in `$XDG_RUNTIME_DIR` are cleared by the
-system when you log out.
+Either one also stops the collector and clears your report layouts and temperature unit, so
+turning omaview back on starts from the defaults. The empty socket and lock files in
+`$XDG_RUNTIME_DIR` stay until you log out.
 
 ## Use
 
@@ -99,6 +99,15 @@ you edit, and each card gets these controls:
 omarchy-shell omaview open cpu    # or gpu, system
 omarchy-shell omaview edit        # edit the report that's open
 omarchy-shell omaview close
+```
+
+Omarchy's standard commands work too, and open the report you used last, or CPU if you
+haven't opened one yet:
+
+```bash
+omarchy-shell shell summon io.github.qnlbnsl.omaview '{}'
+omarchy-shell shell hide io.github.qnlbnsl.omaview
+omarchy-shell shell toggle io.github.qnlbnsl.omaview '{}'
 ```
 
 **Use Fahrenheit:**
