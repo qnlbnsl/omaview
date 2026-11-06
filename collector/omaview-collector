@@ -1,0 +1,4 @@
+#!/bin/bash
+# Keeps the collector's imports independent of the caller's working directory.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHONPATH="$here" PYTHONDONTWRITEBYTECODE=1 exec python3 -m omaview "$@"

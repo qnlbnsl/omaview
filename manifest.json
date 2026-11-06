@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.qnlbnsl.omaview",
+  "name": "omaview",
+  "version": "0.1.0",
+  "author": "qnlbnsl",
+  "description": "CPU, GPU and system stats in the bar, with hover reports you can rearrange.",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "omaview",
+    "description": "CPU, GPU and network stats with hover reports.",
+    "category": "System",
+    "defaultSection": "right",
+    "allowMultiple": false,
+    "defaults": { "temperatureUnit": "Celsius" },
+    "schema": [
+      { "key": "temperatureUnit", "type": "enum", "label": "Temperature unit", "options": ["Celsius", "Fahrenheit"], "defaultValue": "Celsius" }
+    ]
+  }
+}
