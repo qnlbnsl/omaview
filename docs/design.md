@@ -30,6 +30,16 @@ Every bar starts a collector when it has no connection. A `flock` lets one win, 
 exit immediately. If that collector or its bar goes away, the others lose their connection
 and start another within about 2 seconds.
 
+## Following the pointer
+
+While a report is open, the bar's hover state stops following the pointer: moving along the bar
+doesn't reach the section buttons. So while a report is open, and once just before one opens,
+the widget asks `hyprctl cursorpos` where the pointer is and compares it with the section
+rectangles. This polls every 80 ms, and only while a report is open.
+
+Reports open after 250 ms on CPU or GPU and 400 ms on System, switch immediately while one is
+open, and close 300 ms after the pointer leaves both the bar sections and the report.
+
 ## Layouts
 
 A layout is a list of columns of cards, such as

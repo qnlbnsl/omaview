@@ -77,8 +77,9 @@ turning OmaView back on starts from the defaults. The empty socket and lock file
 
 ## Use
 
-**Open a report:** hover or click a section. It closes when the pointer leaves both the
-section and the report.
+**Open a report:** rest the pointer on a section or click it. Moving along the bar switches to
+whichever section you're on. The report closes shortly after the pointer leaves both the bar
+sections and the report, which leaves time to move from the bar into the report.
 
 **Rearrange a report:** click the pencil at the top right of the report. It stays open while
 you edit, and each card gets these controls:

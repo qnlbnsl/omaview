@@ -7,6 +7,7 @@ import qs.Ui
 import "ui"
 import "lib/format.js" as F
 import "lib/layout.js" as L
+import "lib/pointer.js" as P
 
 BarWidget {
   id: root
@@ -32,7 +33,14 @@ BarWidget {
     : gpuButton.tooltipHovered ? "gpu" : systemButton.tooltipHovered ? "system" : ""
   readonly property bool popupHovered: cpuPopup.containsMouse || gpuPopup.containsMouse || systemPopup.containsMouse
 
-  onHoveredSectionChanged: updateHover()
+  // While a report is open the bar's own hover state stops following the pointer, so it's
+  // read from Hyprland instead. That also double-checks the pointer before a report opens.
+  property string polledSection: ""
+  property bool confirmOpen: false
+  readonly property string pointerSection: activeReport !== "" ? polledSection : hoveredSection
+
+  // Deferred because updateHover can change activeReport, which this property depends on.
+  onPointerSectionChanged: Qt.callLater(updateHover)
   onPopupHoveredChanged: updateHover()
   onSettingsChanged: localLayouts = null
   onSocketPathChanged: {
@@ -50,13 +58,14 @@ BarWidget {
 
   function updateHover() {
     if (editing) return
-    if (hoveredSection !== "") {
+    if (pointerSection !== "") {
       closeTimer.stop()
       if (activeReport === "") openTimer.restart()
-      else if (!popupHovered) activeReport = hoveredSection
+      else if (!popupHovered) activeReport = pointerSection
       return
     }
     openTimer.stop()
+    confirmOpen = false
     if (popupHovered) closeTimer.stop()
     else if (activeReport !== "") closeTimer.restart()
   }
@@ -65,6 +74,8 @@ BarWidget {
     closeTimer.stop()
     openTimer.stop()
     saveDraft()
+    confirmOpen = false
+    polledSection = hoveredSection
     activeReport = id
   }
 
@@ -124,8 +135,56 @@ BarWidget {
     function edit(): void { root.viaFocused(function(w) { if (w.activeReport !== "") w.beginEdit() }) }
   }
 
-  Timer { id: openTimer; interval: 140; onTriggered: if (root.hoveredSection !== "") root.activeReport = root.hoveredSection }
-  Timer { id: closeTimer; interval: 300; onTriggered: if (!root.editing && !root.popupHovered && root.hoveredSection === "") root.activeReport = "" }
+  // Long enough that crossing the bar on the way to something else doesn't open a report.
+  // System waits longer because it's big enough to be hard to get out of.
+  Timer {
+    id: openTimer
+    interval: root.pointerSection === "system" ? 400 : 250
+    onTriggered: {
+      root.confirmOpen = true
+      pointerPoll.running = true
+    }
+  }
+  Timer { id: closeTimer; interval: 300; onTriggered: if (!root.editing && !root.popupHovered && root.pointerSection === "") root.activeReport = "" }
+
+  function sectionRect(id, button) {
+    var window = root.QsWindow.window
+    var origin = button.mapToItem(null, 0, 0)
+    return {
+      id: id,
+      x: origin.x + (window && window.screen ? window.screen.x : 0),
+      y: origin.y + (window && window.screen ? window.screen.y : 0),
+      width: button.width,
+      height: button.height
+    }
+  }
+
+  function receivePointer(text) {
+    var position = P.parseCursor(text)
+    if (!position) return
+    var section = P.sectionAt(position.x, position.y, [sectionRect("cpu", cpuButton), sectionRect("gpu", gpuButton), sectionRect("system", systemButton)])
+    if (confirmOpen) {
+      confirmOpen = false
+      if (section !== "" && activeReport === "") {
+        polledSection = section
+        activeReport = section
+      }
+    } else if (activeReport !== "") {
+      polledSection = section
+    }
+  }
+
+  Process {
+    id: pointerPoll
+    command: ["hyprctl", "cursorpos", "-j"]
+    stdout: StdioCollector { onStreamFinished: root.receivePointer(text) }
+  }
+  Timer {
+    interval: 80
+    repeat: true
+    running: root.activeReport !== "" && !root.editing
+    onTriggered: pointerPoll.running = true
+  }
 
   // One collector serves every monitor's bar. Each bar starts one only while it has no
   // connection, and the lock lets one win, so losing the first bar costs about two seconds.
