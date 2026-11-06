@@ -60,8 +60,15 @@ Column {
     theme: root.host.theme
     dim: true
     font.pixelSize: Style.font.caption
-    text: "VRAM " + F.bytes(root.gpu.memUsed) + " of " + F.bytes(root.gpu.memTotal)
-      + "  ·  Fan " + F.percent(root.gpu.fan)
-      + "  ·  P" + (root.gpu.pstate === undefined || root.gpu.pstate === null ? "–" : root.gpu.pstate)
+    // Not every GPU reports all of these, so only show what this one has.
+    text: {
+      var gpu = root.gpu
+      var parts = []
+      if (gpu.memUsed !== undefined && gpu.memUsed !== null)
+        parts.push("VRAM " + F.bytes(gpu.memUsed) + (gpu.memTotal ? " of " + F.bytes(gpu.memTotal) : ""))
+      if (gpu.fan !== undefined && gpu.fan !== null) parts.push("Fan " + F.percent(gpu.fan))
+      if (gpu.pstate !== undefined && gpu.pstate !== null) parts.push("P" + gpu.pstate)
+      return parts.join("  ·  ")
+    }
   }
 }

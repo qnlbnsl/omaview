@@ -1,0 +1,59 @@
+name: AMD or Intel GPU validation
+description: Tell us whether OmaView reads your AMD or Intel Arc GPU correctly. Reports are welcome even if everything looks right.
+title: "[GPU validation]: "
+labels:
+  - gpu-validation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        OmaView's AMD and Intel support has never run on real hardware, so this helps a lot. Thanks!
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      description: "Your card, and the driver from `lspci -k | grep -A3 -E 'VGA|3D'`."
+      placeholder: Radeon RX 7900 XT, amdgpu
+    validations:
+      required: true
+
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel version
+      description: "Output of `uname -r`."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Everything looks right
+        - Some numbers are wrong or missing
+        - No GPU data at all
+    validations:
+      required: true
+
+  - type: textarea
+    id: compare
+    attributes:
+      label: What did you compare it with?
+      description: Run something on the GPU and compare OmaView with a tool you trust, such as `nvtop`, `amdgpu_top` or `intel_gpu_top`. Tell us about anything that doesn't match.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample
+    attributes:
+      label: Collector output
+      description: Output of the command below, run while the GPU is doing something. It lists process names, so check it for anything private before posting.
+      value: |
+        ```
+        # Paste the output of:
+        # ~/.config/omarchy/plugins/io.github.qnlbnsl.omaview/collector/omaview-collector --once | jq .gpu
+        ```
+    validations:
+      required: true
