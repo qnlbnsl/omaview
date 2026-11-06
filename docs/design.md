@@ -76,6 +76,36 @@ the report closes.
    `hasContent: false` to hide it when there's nothing to show.
 3. If it needs new data, add it to `collector/omaview/sampler.py` and to `mock.py`.
 
+## Development
+
+To run a working copy, remove any installed copy, then copy this one into the plugin folder:
+
+```bash
+plugin=~/.config/omarchy/plugins/io.github.qnlbnsl.omaview
+mkdir -p "$plugin"
+cp -r BarWidget.qml manifest.json collector lib ui "$plugin/"
+omarchy-shell shell rescanPlugins
+omarchy plugin enable io.github.qnlbnsl.omaview
+```
+
+After changing QML, copy the files again and run `omarchy restart shell`. The shell notices saved
+files, but didn't reliably pick up new code in testing.
+
+Tests need `qt6-declarative` for the QML logic tests:
+
+```bash
+tests/run.sh                         # everything
+OMAVIEW_SKIP_QML=1 tests/run.sh      # Python only
+collector/omaview-collector --once   # print one full sample as JSON
+```
+
+To work on the UI with awkward values, turn on fake data, and set it back to `false` when you're
+done:
+
+```bash
+omarchy bar set io.github.qnlbnsl.omaview mock true --json
+```
+
 ## Things that are easy to get wrong
 
 - Settings arrive as Qt sequences, which fail `Array.isArray`. `layout.resolve` copies them
