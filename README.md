@@ -42,8 +42,18 @@ CPU 41% 45° 120W    GPU 37% 29° 36W    ↑ 1.2 MB/s ↓ 8.4 MB/s
 
 - Omarchy with its Quickshell bar
 - Python 3.11 or newer, with no extra packages and no build step
-- An NVIDIA card and driver for GPU data. Other GPUs aren't read yet, but everything else
-  still works.
+- A supported GPU for GPU data. Everything else works without one.
+
+| GPU | Driver | Status |
+|---|---|---|
+| NVIDIA | Proprietary driver | Tested on an RTX 3090 |
+| AMD | `amdgpu` | **Not validated** on real hardware |
+| Intel Arc | `xe` or `i915` | **Not validated** on real hardware |
+
+AMD and Intel support is written from the kernel's documentation and tested against simulated
+files, because I don't have those cards. **If you do, a quick
+[validation report](https://github.com/qnlbnsl/omaview/issues/new?template=gpu_validation.yml)
+would be a big help**, even if everything looks right.
 
 ## Install
 
@@ -111,11 +121,41 @@ omarchy-shell shell hide io.github.qnlbnsl.omaview
 omarchy-shell shell toggle io.github.qnlbnsl.omaview '{}'
 ```
 
+**Pass through the System report:** System is big, so if you open it by accident, keep moving
+and it closes on its own after a moment. Stop on it, or open it with a click or a command, and
+it stays open. You can turn this off in the settings below.
+
 **Use Fahrenheit:**
 
 ```bash
 omarchy bar set io.github.qnlbnsl.omaview temperatureUnit Fahrenheit
 ```
+
+## Settings
+
+Hover behaviour lives in an optional file. Create it and change what you like, and the changes
+apply the next time you hover a section. Anything you leave out uses the default.
+
+```bash
+mkdir -p ~/.config/omaview
+cat > ~/.config/omaview/config.json <<'EOF'
+{
+  "openDelayMs": 300,
+  "systemOpenDelayMs": 500,
+  "closeOnPassThrough": true,
+  "passThroughMs": 400
+}
+EOF
+```
+
+| Setting | Default | What it does |
+|---|---|---|
+| `openDelayMs` | `300` | How long to hover on CPU or GPU before the report opens, in milliseconds |
+| `systemOpenDelayMs` | `500` | The same, for System |
+| `closeOnPassThrough` | `true` | Closes System if the pointer crosses it without stopping |
+| `passThroughMs` | `400` | How long the pointer can keep moving inside System before it closes. Raise this if it closes while you're heading for a card |
+
+This file stays when you disable or remove OmaView. Delete `~/.config/omaview` to get rid of it.
 
 ## What it does on your system
 
@@ -124,7 +164,11 @@ Plugins run unsandboxed, so here's exactly what OmaView touches:
 - **Runs one background process.** The bar starts a small Python collector, shared across
   monitors, that samples every 2 seconds. It collects per-process data only while a report is
   open.
-- **Reads** `/proc` and `/sys`, plus NVIDIA's own library (NVML) when it's present.
+- **Reads** `/proc` and `/sys`, including your processes' open GPU files on AMD and Intel, plus
+  NVIDIA's own library (NVML) when it's present, and
+  `~/.config/omaview/config.json` if you've created it.
+- **Asks Hyprland where the pointer is** with `hyprctl cursorpos`, every 80 ms while a report is
+  open, so it can follow you along the bar.
 - **Writes** a socket and lock file in `$XDG_RUNTIME_DIR`, and your layouts to Omarchy's
   `shell.json` when you save an edit.
 - **Doesn't** use the network, need root, or install services. It shows process names, never
@@ -133,6 +177,15 @@ Plugins run unsandboxed, so here's exactly what OmaView touches:
 ## Limits
 
 - 3D and compute are one number, because that's how NVIDIA reports them.
+- If you have more than one GPU, the bar and report show one: NVIDIA first, then AMD or a
+  discrete Intel card, then integrated graphics.
+- AMD and Intel per-process numbers only cover your own processes.
+- Intel has no overall load reading, so its load is added up from your own processes, and other
+  users' GPU work won't show. It also doesn't report total VRAM or fan percentage.
+- Intel's video engines don't separate encoding from decoding, so both rows show the same number.
+- AMD and Intel don't report optical flow or performance state. AMD shows no card-wide encode or
+  decode beyond your own processes.
+- A GPU that's asleep shows 0% and no sensor readings, because reading them would wake it.
 - Per-process disk rates only cover your own processes. Other users' need root.
 - Graphs cover the last 4 minutes and start empty whenever the collector restarts, which
   includes bar reloads.

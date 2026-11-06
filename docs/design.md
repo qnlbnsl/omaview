@@ -4,7 +4,7 @@
 
 | Path | What's there |
 |---|---|
-| `collector/` | Standard-library Python. Reads `/proc`, `/sys` and NVIDIA's NVML library through `ctypes`. |
+| `collector/` | Standard-library Python. Reads `/proc`, `/sys` and NVIDIA's NVML library through `ctypes`. `drm.py` covers AMD and Intel. |
 | `BarWidget.qml` | One instance per monitor. Shows the bar text, connects to the collector and owns the three popups. |
 | `ui/` | The report, shared pieces such as graphs and rings, and one file per card in `ui/cards/`. |
 | `lib/` | Plain JavaScript with no UI, so it can be tested without a display: `format.js` for text, `metrics.js` for graphs, `layout.js` for the card list and builder operations. |
@@ -37,8 +37,26 @@ doesn't reach the section buttons. So while a report is open, and once just befo
 the widget asks `hyprctl cursorpos` where the pointer is and compares it with the section
 rectangles. This polls every 80 ms, and only while a report is open.
 
-Reports open after 250 ms on CPU or GPU and 400 ms on System, switch immediately while one is
-open, and close 300 ms after the pointer leaves both the bar sections and the report.
+Reports open after 300 ms on CPU or GPU and 500 ms on System, switch immediately while one is
+open, and close 300 ms after the pointer leaves both the bar sections and the report. The open
+delays can be changed in `~/.config/omaview/config.json`.
+
+System also closes if the pointer keeps moving inside it for 400 ms without stopping, because
+it's big enough that an accidental open is hard to get out of. Moving less than 8 px between
+two readings counts as stopping, after which it stays open. Reports opened with a click, a
+command or the editor are exempt.
+
+## GPUs
+
+NVIDIA comes from NVML, and AMD and Intel from `collector/omaview/drm.py`, which produces the
+same JSON with `None` for anything a card doesn't report. The UI only shows `gpu[0]`, so sources
+are ordered by how likely a card is to be the one people care about.
+
+AMD and Intel haven't been run on real hardware. `drm.py` follows the kernel's documentation:
+amdgpu's sysfs files, the `xe` and `i915` hwmon and frequency files, and DRM client stats in
+`/proc/<pid>/fdinfo`. Those client stats also provide the per-process list and engine numbers,
+and are read only while a report is open, except on Intel when it's the first GPU, because it
+has no overall busy file. Cards in runtime suspend aren't read, because reading would wake them.
 
 ## Layouts
 

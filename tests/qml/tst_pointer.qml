@@ -33,4 +33,27 @@ TestCase {
     compare(P.parseCursor("not json"), null)
     compare(P.parseCursor('{"x": "a", "y": 1}'), null)
   }
+
+  function test_stopping_settles() {
+    var tracker = P.trackPass(null, 100, 100, 0, 400)
+    tracker = P.trackPass(tracker, 100, 180, 80, 400)
+    verify(!tracker.settled && !tracker.through)
+    tracker = P.trackPass(tracker, 102, 183, 160, 400)
+    verify(tracker.settled && !tracker.through)
+  }
+
+  function test_moving_past_the_limit_is_a_pass_through() {
+    var tracker = P.trackPass(null, 100, 100, 0, 400)
+    tracker = P.trackPass(tracker, 100, 200, 200, 400)
+    verify(!tracker.through)
+    tracker = P.trackPass(tracker, 100, 300, 400, 400)
+    verify(tracker.through && !tracker.settled)
+  }
+
+  function test_settling_is_final() {
+    var tracker = P.trackPass(null, 100, 100, 0, 400)
+    tracker = P.trackPass(tracker, 100, 100, 80, 400)
+    tracker = P.trackPass(tracker, 100, 900, 2000, 400)
+    verify(tracker.settled && !tracker.through)
+  }
 }

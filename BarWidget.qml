@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "ui"
+import "lib/config.js" as C
 import "lib/format.js" as F
 import "lib/layout.js" as L
 import "lib/pointer.js" as P
@@ -37,6 +38,11 @@ BarWidget {
   // read from Hyprland instead. That also double-checks the pointer before a report opens.
   property string polledSection: ""
   property bool confirmOpen: false
+
+  // Set when a report was opened on purpose (click, command or edit), so crossing it can't close it.
+  property bool passExempt: false
+  property var passTracker: null
+  property var config: C.parse("")
   readonly property string pointerSection: activeReport !== "" ? polledSection : hoveredSection
 
   // Deferred because updateHover can change activeReport, which this property depends on.
@@ -49,6 +55,8 @@ BarWidget {
   }
 
   onActiveReportChanged: {
+    passTracker = null
+    passExempt = false
     syncDetail()
     if (activeReport !== "") {
       lastReport = activeReport
@@ -60,7 +68,10 @@ BarWidget {
     if (editing) return
     if (pointerSection !== "") {
       closeTimer.stop()
-      if (activeReport === "") openTimer.restart()
+      if (activeReport === "") {
+        configFile.reload()
+        openTimer.restart()
+      }
       else if (!popupHovered) activeReport = pointerSection
       return
     }
@@ -77,6 +88,7 @@ BarWidget {
     confirmOpen = false
     polledSection = hoveredSection
     activeReport = id
+    passExempt = true
   }
 
   function closeReport(id) {
@@ -92,7 +104,10 @@ BarWidget {
   function open() { openReport(lastReport) }
   function close() { closeReport(activeReport) }
 
-  function beginEdit() { draft = JSON.parse(JSON.stringify(layouts[activeReport])) }
+  function beginEdit() {
+    passExempt = true
+    draft = JSON.parse(JSON.stringify(layouts[activeReport]))
+  }
 
   function saveDraft() {
     if (draft === null || activeReport === "") return
@@ -135,11 +150,22 @@ BarWidget {
     function edit(): void { root.viaFocused(function(w) { if (w.activeReport !== "") w.beginEdit() }) }
   }
 
+  // Optional, and only ever read. Missing or invalid settings use the defaults in lib/config.js.
+  // Read again each time the pointer reaches a section, because a file that doesn't exist yet
+  // can't be watched.
+  FileView {
+    id: configFile
+    path: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/omaview/config.json"
+    printErrors: false
+    onLoaded: root.config = C.parse(text())
+    onLoadFailed: root.config = C.parse("")
+  }
+
   // Long enough that crossing the bar on the way to something else doesn't open a report.
   // System waits longer because it's big enough to be hard to get out of.
   Timer {
     id: openTimer
-    interval: root.pointerSection === "system" ? 400 : 250
+    interval: root.pointerSection === "system" ? root.config.systemOpenDelayMs : root.config.openDelayMs
     onTriggered: {
       root.confirmOpen = true
       pointerPoll.running = true
@@ -171,6 +197,20 @@ BarWidget {
       }
     } else if (activeReport !== "") {
       polledSection = section
+      followPass(position, section)
+    }
+  }
+
+  // Closes System when the pointer crosses it without stopping, so opening it by accident
+  // doesn't mean travelling all the way out of it.
+  function followPass(position, section) {
+    if (activeReport !== "system" || passExempt || !config.closeOnPassThrough) return
+    if (passTracker && passTracker.settled) return
+    if (section !== "") {
+      passTracker = null
+    } else if (popupHovered) {
+      passTracker = P.trackPass(passTracker, position.x, position.y, Date.now(), config.passThroughMs)
+      if (passTracker.through) activeReport = ""
     }
   }
 
