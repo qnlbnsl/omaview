@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "io.github.qnlbnsl.omaview",
-  "name": "omaview",
+  "name": "OmaView",
   "version": "0.1.0",
   "author": "qnlbnsl",
   "license": "MIT",
@@ -9,7 +9,7 @@
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },
   "barWidget": {
-    "displayName": "omaview",
+    "displayName": "OmaView",
     "description": "CPU, GPU and network stats with hover reports.",
     "category": "System",
     "defaultSection": "right",

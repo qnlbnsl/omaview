@@ -1,4 +1,4 @@
-# omaview
+# OmaView
 
 Live CPU, GPU and network stats in your [Omarchy](https://omarchy.org) bar. Hover a section for
 a detailed report, then rearrange its cards however you like.
@@ -72,7 +72,7 @@ omarchy plugin remove io.github.qnlbnsl.omaview
 ```
 
 Either one also stops the collector and clears your report layouts and temperature unit, so
-turning omaview back on starts from the defaults. The empty socket and lock files in
+turning OmaView back on starts from the defaults. The empty socket and lock files in
 `$XDG_RUNTIME_DIR` stay until you log out.
 
 ## Use
@@ -118,7 +118,7 @@ omarchy bar set io.github.qnlbnsl.omaview temperatureUnit Fahrenheit
 
 ## What it does on your system
 
-Plugins run unsandboxed, so here's exactly what omaview touches:
+Plugins run unsandboxed, so here's exactly what OmaView touches:
 
 - **Runs one background process.** The bar starts a small Python collector, shared across
   monitors, that samples every 2 seconds. It collects per-process data only while a report is
